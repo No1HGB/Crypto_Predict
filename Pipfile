@@ -12,6 +12,7 @@ pandas = "*"
 python-dotenv = "*"
 requests = "*"
 binance-connector = "*"
+openpyxl = "*"
 
 [dev-packages]
 

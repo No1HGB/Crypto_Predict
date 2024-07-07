@@ -3,7 +3,7 @@ import time
 
 
 # 1d 기준 endTime 계산
-def cal_end_time():
+def cal_end_time() -> int:
     now = datetime.datetime.now(datetime.UTC)
     ent_time = (
         now.replace(hour=0, minute=0, second=0, microsecond=0)
