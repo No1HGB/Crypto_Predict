@@ -18,7 +18,7 @@ def calculate_values(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# 전처리 계산
+# 전처리
 # v_r' = v_r * (가장 최근 volume MA) / (현재 데이터 volume MA)
 # d' = d * (가장 최근 절댓값 delta EMA) / (현재 데이터 절댓값 delta EMA)
 # dis' = dis * (가장 최근 절댓값 distance EMA) / (현재 데이터 절댓값 distance EMA)
@@ -40,9 +40,6 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
             "close",
             "volume",
             "EMA50",
-            "volume_MA",
-            "delta_EMA",
-            "distance_EMA",
         ],
         inplace=True,
         axis=1,
