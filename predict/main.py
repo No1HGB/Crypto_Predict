@@ -30,4 +30,5 @@ def main(numbers: int):
     print(final_4h["delta_process"].sum())
 
 
-main(20000)
+if __name__ == "__main__":
+    main(20000)
