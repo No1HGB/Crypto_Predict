@@ -45,5 +45,6 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
         axis=1,
     )
     df = df.iloc[50:]
+    df.reset_index(drop=True, inplace=True)
 
     return df

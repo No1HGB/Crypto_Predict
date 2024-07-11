@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5d4db05d92bfa8b7ebeb0aaa2a23558c353e1dcd417f55ae3cde97f677f2897a"
+            "sha256": "c41562be3e9d6f338573834e19fdd61615e51a70c003792ab144d2725fcb0eb2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -35,12 +35,21 @@
         },
         "binance-connector": {
             "hashes": [
-                "sha256:0296e661787eb4c783ec854ceb9d2e61cfd232b6c8024c31b95eaa5c21e2ca23",
-                "sha256:8adc134a4115381d2632299e766e743c49b66873adeba7fff3dc511fae3ae313"
+                "sha256:2fc09c21092b77aaace98265c6f20f6f6b37bc8724f289ad3b831f6d86adf33e",
+                "sha256:d55c627a57debcd926245a5ad37160aba65756704d18dc3c08ed7f42725380a2"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==3.7.0"
+            "version": "==3.8.0"
+        },
+        "binance-futures-connector": {
+            "hashes": [
+                "sha256:8c6bd44d071c563a0329f37d192bcae160c6f614bc25a04c9cc6abc97e43606b",
+                "sha256:e61fd1eb61180b055d650377f70e1f219f443876ea57efe9fdb2bfa4e2137738"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7'",
+            "version": "==4.0.0"
         },
         "certifi": {
             "hashes": [

@@ -1,25 +1,47 @@
+import config
 import datetime
 import pandas as pd
+from fetch_test import fetch_data, fetch_one_data, fetch_interval_data
+from calculate import start_calculate_euclidean, procedure_calculate_euclidean
+from process import calculate_values, process_data
 
-"""
-startDate_str = input()
-endDate_str = input()
-startDate_time_obj = datetime.datetime.strptime(startDate_str, "%y-%m-%d %H:%M")
-endDate_time_obj = datetime.datetime.strptime(endDate_str, "%y-%m-%d %H:%M")
-# Unix 타임스탬프를 초 단위로 변환 후 밀리초로 변환
-start_time = int(startDate_time_obj.timestamp() * 1000)
-end_time = int(endDate_time_obj.timestamp() * 1000)
 
-data = fetch_one_data(symbol="BTCUSDT", interval="4h", end_time=end_time, limit=100)
-print(data)
-"""
-df1 = pd.DataFrame(
-    {
-        "A": ["A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9"],
-        "B": ["B0", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9"],
-        "C": ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "C9"],
-        "D": ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9"],
-    }
-)
+def main(numbers: int):
+    symbol = config.symbol
+    endDate_str = input()
+    endDate_time_obj = datetime.datetime.strptime(endDate_str, "%y-%m-%d %H:%M")
+    end_time_input = int(endDate_time_obj.timestamp() * 1000)
+    data_4h = fetch_data(
+        symbol=symbol, interval="4h", end_time=end_time_input, numbers=numbers
+    )
+    results_4h = start_calculate_euclidean(data_4h)
+    results_1h = procedure_calculate_euclidean(results_4h, "1h")
+    results_15m = procedure_calculate_euclidean(results_1h, "15m")
+    results_5m = procedure_calculate_euclidean(results_15m, "5m")
+    results_1m = procedure_calculate_euclidean(results_5m, "1m")
 
-print(df1[["A", "B"]])
+    end_time_cal = int(results_1m[1][0].iloc[-1]["close_time"])
+    final_4h_cal = fetch_one_data(
+        symbol=symbol, interval="4h", end_time=end_time_cal, limit=50
+    )
+
+    start_time = int(results_1m[1][0].iloc[-1]["close_time"] + 1)
+    end_time = int(start_time + datetime.timedelta(hours=24).total_seconds() * 1000 - 1)
+
+    final_4h = fetch_interval_data(
+        symbol=symbol, interval="4h", start_time=start_time, end_time=end_time
+    )
+    final_4h = pd.concat([final_4h_cal, final_4h], axis=0, ignore_index=True)
+    final_4h = calculate_values(final_4h)
+    final_4h = process_data(final_4h)
+
+    print(
+        int(results_1m[1][0].iloc[0]["open_time"]),
+        int(results_1m[1][0].iloc[-1]["close_time"]),
+    )
+    print(final_4h[["delta_process"]])
+    print(final_4h["delta_process"].sum())
+
+
+if __name__ == "__main__":
+    main(20000)

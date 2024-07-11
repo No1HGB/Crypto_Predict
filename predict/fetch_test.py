@@ -57,28 +57,9 @@ def fetch_one_data(
 
 # interval 에 따른 정해진 개수의 데이터 가져오기
 def fetch_data(
-    symbol: str, interval: str, numbers: int, type: str = "spot"
+    symbol: str, interval: str, end_time: int, numbers: int, type: str = "spot"
 ) -> pd.DataFrame:
-    start_timedelta = datetime.timedelta()
-    if interval == "1m":
-        start_timedelta = datetime.timedelta(minutes=1)
-    elif interval == "5m":
-        start_timedelta = datetime.timedelta(minutes=5)
-    elif interval == "15m":
-        start_timedelta = datetime.timedelta(minutes=15)
-    elif interval == "1h":
-        start_timedelta = datetime.timedelta(hours=1)
-    elif interval == "4h":
-        start_timedelta = datetime.timedelta(hours=4)
-    elif interval == "1d":
-        start_timedelta = datetime.timedelta(days=1)
 
-    now = datetime.datetime.now(datetime.UTC)
-    end_datetime = (
-        now.replace(hour=0, minute=0, second=0, microsecond=0) - start_timedelta
-    )
-
-    end_time = int(end_datetime.timestamp() * 1000)
     data = []
 
     while numbers > 0:

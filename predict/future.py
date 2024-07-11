@@ -6,26 +6,30 @@ from calculate import start_calculate_euclidean, procedure_calculate_euclidean
 from process import calculate_values, process_data
 
 
-def main(numbers: int):
+def futures(numbers: int):
     symbol = config.symbol
 
-    data_4h = fetch_data(symbol=symbol, interval="4h", numbers=numbers)
+    data_4h = fetch_data(symbol=symbol, interval="4h", numbers=numbers, type="future")
     results_4h = start_calculate_euclidean(data_4h)
-    results_1h = procedure_calculate_euclidean(results_4h, "1h")
-    results_15m = procedure_calculate_euclidean(results_1h, "15m")
-    results_5m = procedure_calculate_euclidean(results_15m, "5m")
-    results_1m = procedure_calculate_euclidean(results_5m, "1m")
+    results_1h = procedure_calculate_euclidean(results_4h, "1h", "future")
+    results_15m = procedure_calculate_euclidean(results_1h, "15m", "future")
+    results_5m = procedure_calculate_euclidean(results_15m, "5m", "future")
+    results_1m = procedure_calculate_euclidean(results_5m, "1m", "future")
 
     end_time_cal = int(results_1m[1][0].iloc[-1]["close_time"])
     final_4h_cal = fetch_one_data(
-        symbol=symbol, interval="4h", end_time=end_time_cal, limit=50
+        symbol=symbol, interval="4h", end_time=end_time_cal, limit=50, type="future"
     )
 
     start_time = int(results_1m[1][0].iloc[-1]["close_time"] + 1)
     end_time = int(start_time + datetime.timedelta(hours=24).total_seconds() * 1000 - 1)
 
     final_4h = fetch_interval_data(
-        symbol=symbol, interval="4h", start_time=start_time, end_time=end_time
+        symbol=symbol,
+        interval="4h",
+        start_time=start_time,
+        end_time=end_time,
+        type="future",
     )
     final_4h = pd.concat([final_4h_cal, final_4h], axis=0, ignore_index=True)
     final_4h = calculate_values(final_4h)
@@ -40,4 +44,4 @@ def main(numbers: int):
 
 
 if __name__ == "__main__":
-    main(20000)
+    futures(20000)
