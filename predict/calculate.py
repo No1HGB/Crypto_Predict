@@ -115,9 +115,7 @@ def procedure_calculate_euclidean(
             end_time=comparison_end_time,
             type=type,
         )
-        print(f"raw: {comparison_df.shape}")
-        if comparison_df.shape[0] == 23:
-            print(comparison_df)
+
         comparison_df = pd.concat(
             [df_for_cal_com, comparison_df], axis=0, ignore_index=True
         )
@@ -126,22 +124,23 @@ def procedure_calculate_euclidean(
         comparison_data = comparison_df[
             ["volume_process", "delta_process", "distance_process"]
         ].values
-
-        dist = np.sum(np.linalg.norm(standard_data - comparison_data, axis=1))
-        distances.append((dist, comparison_df))
+        if standard_data.shape == comparison_data.shape:
+            dist = np.sum(np.linalg.norm(standard_data - comparison_data, axis=1))
+            distances.append((dist, comparison_df))
         time.sleep(0.1)
 
     distances_sorted = sorted(distances, key=lambda x: x[0])
 
     num: int = 0
-    if interval == "1h":
-        num = 8
-    elif interval == "15m":
-        num = 4
-    elif interval == "5m":
-        num = 2
-    elif interval == "1m":
-        num = 1
+    if distances_sorted:
+        if interval == "1h":
+            num = 8
+        elif interval == "15m":
+            num = 4
+        elif interval == "5m":
+            num = 2
+        elif interval == "1m":
+            num = 1
 
     closest_datasets = [df for _, df in distances_sorted[:num]]
 

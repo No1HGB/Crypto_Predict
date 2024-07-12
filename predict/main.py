@@ -12,9 +12,17 @@ def main(numbers: int):
     data_4h = fetch_data(symbol=symbol, interval="4h", numbers=numbers)
     results_4h = start_calculate_euclidean(data_4h)
     results_1h = procedure_calculate_euclidean(results_4h, "1h")
+    if not results_1h[1]:
+        return "No result"
     results_15m = procedure_calculate_euclidean(results_1h, "15m")
+    if not results_15m[1]:
+        return "No result"
     results_5m = procedure_calculate_euclidean(results_15m, "5m")
+    if not results_5m[1]:
+        return "No result"
     results_1m = procedure_calculate_euclidean(results_5m, "1m")
+    if not results_1m[1]:
+        return "No result"
 
     end_time_cal = int(results_1m[1][0].iloc[-1]["close_time"])
     final_4h_cal = fetch_one_data(
@@ -31,10 +39,6 @@ def main(numbers: int):
     final_4h = calculate_values(final_4h)
     final_4h = process_data(final_4h)
 
-    print(
-        int(results_1m[1][0].iloc[0]["open_time"]),
-        int(results_1m[1][0].iloc[-1]["close_time"]),
-    )
     print(final_4h[["delta_process"]])
     print(final_4h["delta_process"].sum())
 
