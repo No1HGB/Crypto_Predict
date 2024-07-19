@@ -43,7 +43,7 @@ def main(numbers: int):
     final_4h = calculate_values(final_4h)
     final_4h = process_data(final_4h)
 
-    print(final_4h[["delta_process"]])
+    print(final_4h[["delta_process", "open_time", "close_time"]])
     print(final_4h["delta_process"].sum())
 
 

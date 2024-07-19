@@ -1,4 +1,87 @@
+import numpy as np
 import pandas as pd
+
+
+def cal_value(df: pd.DataFrame) -> pd.DataFrame:
+    alpha = 2 / (50 + 1)
+    df["EMA50"] = df["close"].ewm(alpha=alpha, adjust=True).mean()
+
+    df["delta"] = (df["close"] - df["open"]) / df["open"] * 100
+    df["up_delta"] = (
+        (df["high"] - df[["open", "close"]].max(axis=1))
+        / df[["open", "close"]].max(axis=1)
+        * 100
+    )
+    df["down_delta"] = (
+        (df["low"] - df[["open", "close"]].min(axis=1))
+        / df[["open", "close"]].min(axis=1)
+        * 100
+    )
+    df["volume_delta"] = df["volume"] / df["volume"].shift(1) - 1
+    df["distance"] = (df["close"] - df["EMA50"]) / df["EMA50"] * 100
+
+    df.dropna(axis=0, inplace=True, how="any")
+    df.reset_index(drop=True, inplace=True)
+
+    return df
+
+
+def create_x_data(spot: pd.DataFrame, future: pd.DataFrame, window_size=864):
+    if len(spot) != len(future):
+        raise ValueError("A and B must have same length")
+
+    spot_val = spot[["delta", "up_delta", "down_delta", "volume_delta", "distance"]]
+    future_val = future[["delta", "up_delta", "down_delta", "volume_delta", "distance"]]
+
+    x_data = []
+    for i in range(len(spot_val) - window_size):
+        spot_slice = spot_val.iloc[i : i + window_size].values
+        future_slice = future_val.iloc[i : i + window_size].values
+        combined = np.vstack((spot_slice, future_slice))
+        x_data.append(combined)
+    return np.array(x_data)
+
+
+def create_y_data(spot: pd.DataFrame, future: pd.DataFrame, window_size=864):
+    if len(spot) != len(future):
+        raise ValueError("A and B must have same length")
+
+    y_data = []
+    for i in range(window_size, len(spot) - window_size, window_size):
+        spot_slice = spot.iloc[i : i + window_size]
+        future_slice = future.iloc[i : i + window_size]
+
+        spot_open = spot_slice.iloc[0]["open"]
+        spot_close = spot_slice.iloc[-1]["close"]
+        future_open = future_slice.iloc[0]["open"]
+        future_close = future_slice.iloc[-1]["close"]
+
+        a1 = (spot_close - spot_open) / spot_open * 100
+        a2 = (
+            (spot_slice["high"].max() - max(spot_open, spot_close))
+            / max(spot_open, spot_close)
+            * 100
+        )
+        a3 = (
+            (spot_slice["low"].min() - min(spot_open, spot_close))
+            / min(spot_open, spot_close)
+            * 100
+        )
+
+        b1 = (future_close - future_open) / future_open * 100
+        b2 = (
+            (future_slice["high"].max() - max(future_open, future_close))
+            / max(future_open, future_close)
+            * 100
+        )
+        b3 = (
+            (future_slice["low"].min() - min(future_open, future_close))
+            / min(future_open, future_close)
+            * 100
+        )
+
+        y_data.append([a1, a2, a3, b1, b2, b3])
+    return np.array(y_data)
 
 
 # 필요한 값들 계산
@@ -44,7 +127,7 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
         inplace=True,
         axis=1,
     )
-    df = df.iloc[50:]
+    df.dropna(axis=0, inplace=True, how="any")
     df.reset_index(drop=True, inplace=True)
 
     return df

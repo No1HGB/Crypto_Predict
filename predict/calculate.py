@@ -11,38 +11,32 @@ from process import calculate_values, process_data
 def start_calculate_euclidean(
     df: pd.DataFrame,
 ) -> Tuple[pd.DataFrame, List[pd.DataFrame]]:
+    count: int = 18
 
     df = calculate_values(df)
     df = process_data(df)
 
-    standard_rows = df.iloc[-6:]
-    comparison_rows = df.iloc[:-6]
+    standard_rows = df.iloc[-count:]
+    comparison_rows = df.iloc[:-count]
 
     # 마지막 n개 행 데이터
-    last_rows = standard_rows[
-        ["volume_process", "delta_process", "distance_process"]
-    ].values
+    last_rows = standard_rows[["delta_process"]].values
 
     # 모든 거리 계산을 위해 데이터 배열 준비
-    comparison_matrix = comparison_rows[
-        ["volume_process", "delta_process", "distance_process"]
-    ].values
+    comparison_matrix = comparison_rows[["delta_process"]].values
 
     # 유클리드 거리 계산
     distances = []
-    for i in range(len(comparison_matrix) - 5):
-        subset = comparison_matrix[i : i + 6]
+    for i in range(len(comparison_matrix) - (count - 1)):
+        subset = comparison_matrix[i : i + count]
         dist = np.sum(np.linalg.norm(last_rows - subset, axis=1))
-        distances.append((dist, comparison_rows.iloc[i : i + 6]))
+        distances.append((dist, comparison_rows.iloc[i : i + count]))
 
     # 거리가 가장 작은 순서대로 정렬
     distances_sorted = sorted(distances, key=lambda x: x[0])
 
     # 거리가 가장 작은 데이터셋 16개 반환
     closest_datasets = [dataset for _, dataset in distances_sorted[:16]]
-
-    for df in closest_datasets:
-        print(f"closest: {df.shape}")
 
     return standard_rows, closest_datasets
 
@@ -86,9 +80,7 @@ def procedure_calculate_euclidean(
 
     # 유클리드 거리 계산
     distances = []
-    standard_data = standard_df[
-        ["volume_process", "delta_process", "distance_process"]
-    ].values
+    standard_data = standard_df[["delta_process"]].values
 
     time.sleep(0.1)
 
@@ -104,9 +96,6 @@ def procedure_calculate_euclidean(
 
         comparison_start_time = int(closest_datasets_init[i].iloc[0]["open_time"])
         comparison_end_time = int(closest_datasets_init[i].iloc[-1]["close_time"])
-        if interval == "1h":
-            hour = (comparison_end_time - comparison_start_time) / (3600 * 1000)
-            print(hour)
 
         comparison_df = fetch_interval_data(
             symbol=symbol,
@@ -121,9 +110,7 @@ def procedure_calculate_euclidean(
         )
         comparison_df = calculate_values(comparison_df)
         comparison_df = process_data(comparison_df)
-        comparison_data = comparison_df[
-            ["volume_process", "delta_process", "distance_process"]
-        ].values
+        comparison_data = comparison_df[["delta_process"]].values
         if standard_data.shape == comparison_data.shape:
             dist = np.sum(np.linalg.norm(standard_data - comparison_data, axis=1))
             distances.append((dist, comparison_df))

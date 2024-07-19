@@ -59,6 +59,7 @@ def fetch_one_data(
 def fetch_data(
     symbol: str, interval: str, numbers: int, type: str = "spot"
 ) -> pd.DataFrame:
+
     start_timedelta = datetime.timedelta()
     if interval == "1m":
         start_timedelta = datetime.timedelta(minutes=1)
@@ -81,11 +82,15 @@ def fetch_data(
     end_time = int(end_datetime.timestamp() * 1000)
     data = []
 
+    cnt: int = 1000
+    if type == "future":
+        cnt: int = 1500
+
     while numbers > 0:
-        if numbers < 1000:
+        if numbers < cnt:
             num = numbers
         else:
-            num = 1000
+            num = cnt
 
         df = fetch_one_data(
             symbol=symbol,
