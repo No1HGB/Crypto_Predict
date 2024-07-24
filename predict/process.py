@@ -4,130 +4,132 @@ import pandas as pd
 
 def cal_value(df: pd.DataFrame) -> pd.DataFrame:
     alpha = 2 / (50 + 1)
+    alpha_200 = 2 / (200 + 1)
     df["EMA50"] = df["close"].ewm(alpha=alpha, adjust=True).mean()
+    df["EMA200"] = df["close"].ewm(alpha=alpha_200, adjust=False).mean()
+    df["volume_MA"] = df["volume"].rolling(window=50).mean()
 
-    df["delta"] = (df["close"] - df["open"]) / df["open"] * 100
-    df["up_delta"] = (
-        (df["high"] - df[["open", "close"]].max(axis=1))
-        / df[["open", "close"]].max(axis=1)
-        * 100
-    )
-    df["down_delta"] = (
-        (df["low"] - df[["open", "close"]].min(axis=1))
-        / df[["open", "close"]].min(axis=1)
-        * 100
-    )
-    df["volume_delta"] = df["volume"] / df["volume"].shift(1) - 1
-    df["distance"] = (df["close"] - df["EMA50"]) / df["EMA50"] * 100
+    df["delta"] = df["close"] / df["open"] * 100
+    df["up_delta"] = df["high"] / df[["open", "close"]].max(axis=1) * 100
+    df["down_delta"] = df["low"] / df[["open", "close"]].min(axis=1) * 100
 
+    df["volume_ratio"] = df["volume"] / df["volume_MA"]
+    df["volume_delta"] = df["volume"] / df["volume"].shift(1)
+
+    df["distance_50"] = df["close"] / df["EMA50"] * 100
+    df["distance_200"] = df["close"] / df["EMA200"] * 100
+
+    df.drop(["EMA50", "EMA200", "volume_MA"], axis=1, inplace=True)
     df.dropna(axis=0, inplace=True, how="any")
     df.reset_index(drop=True, inplace=True)
 
     return df
 
 
-def create_x_data(spot: pd.DataFrame, future: pd.DataFrame, window_size=864):
-    if len(spot) != len(future):
-        raise ValueError("A and B must have same length")
+def create_x_data(future: pd.DataFrame, window_size=864):
 
-    spot_val = spot[["delta", "up_delta", "down_delta", "volume_delta", "distance"]]
-    future_val = future[["delta", "up_delta", "down_delta", "volume_delta", "distance"]]
+    future_val = future[["up_delta", "delta", "down_delta", "volume_ratio"]]
 
     x_data = []
-    for i in range(len(spot_val) - window_size):
-        spot_slice = spot_val.iloc[i : i + window_size].values
+    for i in range(len(future_val) - 2 * window_size + 1):
         future_slice = future_val.iloc[i : i + window_size].values
-        combined = np.vstack((spot_slice, future_slice))
-        x_data.append(combined)
+        x_data.append(future_slice)
     return np.array(x_data)
 
 
-def create_y_data(spot: pd.DataFrame, future: pd.DataFrame, window_size=864):
-    if len(spot) != len(future):
-        raise ValueError("A and B must have same length")
+def create_y_data(future: pd.DataFrame, window_size=864):
+    future_val = future[["up_delta", "delta", "down_delta", "volume_ratio"]]
 
     y_data = []
-    for i in range(window_size, len(spot) - window_size, window_size):
-        spot_slice = spot.iloc[i : i + window_size]
-        future_slice = future.iloc[i : i + window_size]
+    for i in range(window_size, len(future) - window_size + 1):
+        day_num = int(window_size / 3)
+        future_slice = future_val.iloc[i : i + day_num]
+        delta_vector = future_slice["delta"].values
+        y_data.append(delta_vector)
 
-        spot_open = spot_slice.iloc[0]["open"]
-        spot_close = spot_slice.iloc[-1]["close"]
-        future_open = future_slice.iloc[0]["open"]
-        future_close = future_slice.iloc[-1]["close"]
-
-        a1 = (spot_close - spot_open) / spot_open * 100
-        a2 = (
-            (spot_slice["high"].max() - max(spot_open, spot_close))
-            / max(spot_open, spot_close)
-            * 100
-        )
-        a3 = (
-            (spot_slice["low"].min() - min(spot_open, spot_close))
-            / min(spot_open, spot_close)
-            * 100
-        )
-
-        b1 = (future_close - future_open) / future_open * 100
-        b2 = (
-            (future_slice["high"].max() - max(future_open, future_close))
-            / max(future_open, future_close)
-            * 100
-        )
-        b3 = (
-            (future_slice["low"].min() - min(future_open, future_close))
-            / min(future_open, future_close)
-            * 100
-        )
-
-        y_data.append([a1, a2, a3, b1, b2, b3])
+        # future_part = future_slice.iloc[:d_num]
+        # future_open = future_part.iloc[0]["open"]
+        # future_close = future_part.iloc[-1]["close"]
+        #
+        # a1 = (future_close - future_open) / future_open * 100
+        # a2 = (
+        #     (future_part["high"].max() - max(future_open, future_close))
+        #     / max(future_open, future_close)
+        #     * 100
+        # )
+        # a3 = (
+        #     (future_part["low"].min() - min(future_open, future_close))
+        #     / min(future_open, future_close)
+        #     * 100
+        # )
+        #
+        # y_data.append([a1, a2, a3])
     return np.array(y_data)
 
 
-# 필요한 값들 계산
-def calculate_values(df: pd.DataFrame) -> pd.DataFrame:
-    alpha = 2 / (50 + 1)
-
-    df["volume_MA"] = df["volume"].rolling(window=50).mean()
-    df["volume_ratio"] = df["volume"] / df["volume_MA"]
-
-    df["delta"] = (df["close"] - df["open"]) / df["open"] * 100
-    df["delta_EMA"] = abs(df["delta"]).ewm(alpha=alpha, adjust=True).mean()
-
-    df["EMA50"] = df["close"].ewm(alpha=alpha, adjust=True).mean()
-    df["distance"] = (df["close"] - df["EMA50"]) / df["EMA50"] * 100
-    df["distance_EMA"] = abs(df["distance"]).ewm(alpha=alpha, adjust=True).mean()
-
-    return df
+# 열 별 MinMaxScaling
+def min_max_scaling(df: pd.DataFrame):
+    min_max_values = {}
+    df_scaled = df.copy()
+    for column in df.columns:
+        min_value = df[column].min()
+        max_value = df[column].max()
+        df_scaled[column] = (df[column] - min_value) / (max_value - min_value)
+        min_max_values[column] = (min_value, max_value)
+    return df_scaled, min_max_values
 
 
-# 전처리
-# v_r' = v_r * (가장 최근 volume MA) / (현재 데이터 volume MA)
-# d' = d * (가장 최근 절댓값 delta EMA) / (현재 데이터 절댓값 delta EMA)
-# dis' = dis * (가장 최근 절댓값 distance EMA) / (현재 데이터 절댓값 distance EMA)
-def process_data(df: pd.DataFrame) -> pd.DataFrame:
-    volume_mark = df.iloc[-1]["volume_MA"]
-    df["volume_process"] = df["volume_ratio"] * (volume_mark / df["volume_MA"])
+def create_x_data_conv2d(future: pd.DataFrame, x_cols: list, days: int):
+    window_size = days * 24 * 12
+    future_val = future[x_cols]
+    x_data = []
 
-    delta_mark = df.iloc[-1]["delta_EMA"]
-    df["delta_process"] = df["delta"] * (delta_mark / df["delta_EMA"])
+    for i in range(len(future_val) - 2 * window_size + 1):
+        future_slice = future_val.iloc[i : i + window_size]
 
-    distance_mark = df.iloc[-1]["distance_EMA"]
-    df["distance_process"] = df["distance"] * (distance_mark / df["distance_EMA"])
+        slice_scaled, _ = min_max_scaling(future_slice)
 
-    df.drop(
-        [
-            "open",
-            "high",
-            "low",
-            "close",
-            "volume",
-            "EMA50",
-        ],
-        inplace=True,
-        axis=1,
-    )
-    df.dropna(axis=0, inplace=True, how="any")
-    df.reset_index(drop=True, inplace=True)
+        slice_vectors = slice_scaled.values
+        x_data.append(slice_vectors)
 
-    return df
+    return np.array(x_data)
+
+
+def create_y_data_conv2d(future: pd.DataFrame, y_cols: list, x_days: int, y_days: int):
+    window_size = x_days * 24 * 12
+    y_window_size = y_days * 24 * 12
+    future_val = future[y_cols]
+    y_data = []
+    min_max_values_list = []
+
+    for i in range(window_size, len(future) - window_size + 1):
+        future_slice = future_val.iloc[i : i + y_window_size]
+
+        slice_scaled, min_max_values = min_max_scaling(future_slice)
+
+        slice_vectors = slice_scaled.values
+        y_data.append(slice_vectors)
+        min_max_values_list.append(min_max_values)
+
+    return np.array(y_data), min_max_values_list
+
+
+# y_data 역 스케일링
+def inverse_scaling(scaled_data: pd.DataFrame, min_max_values_list: list):
+    original_data = []
+
+    for i in range(len(scaled_data)):
+        # 각 슬라이스를 (timesteps, features, 1)에서 (timesteps, features)로 reshape
+        scaled_slice = scaled_data[i].reshape(-1, len(scaled_data.columns))
+        min_max_values = min_max_values_list[i]
+        original_slice = pd.DataFrame(scaled_slice)
+
+        for column in original_slice.columns:
+            min_value, max_value = min_max_values[column]
+            original_slice[column] = (
+                original_slice[column] * (max_value - min_value) + min_value
+            )
+
+        original_data.append(original_slice.values)
+
+    return np.array(original_data)

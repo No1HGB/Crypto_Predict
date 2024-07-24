@@ -16,6 +16,7 @@ openpyxl = "*"
 binance-futures-connector = "*"
 tensorflow = "*"
 keras-tuner = "*"
+matplotlib = "*"
 
 [dev-packages]
 
