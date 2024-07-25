@@ -94,8 +94,50 @@ class Conv2DHyperModel(HyperModel):
         model = keras.Model(inputs=inputs, outputs=outputs)
 
         model.compile(
-            optimizer="adamw",
+            optimizer="adam",
             loss="mean_squared_error",
         )
+
+        return model
+
+
+class Conv2DModel:
+    def __init__(
+        self,
+        x_shape_input: tuple,
+        y_shape_input: tuple,
+        activation: str = "leaky_relu",
+    ):
+        super().__init__()  # 부모 클래스의 __init__ 메서드 호출
+        self.x_shape_input = x_shape_input
+        self.y_shape_input = y_shape_input
+        self.activation = activation
+
+    def build(self):
+        # 입력층
+        inputs = Input(shape=self.x_shape_input)
+
+        # 첫 번째 Conv2D 층
+        x = Conv2D(
+            filters=96, kernel_size=3, activation=self.activation, padding="same"
+        )(inputs)
+
+        # x shape을 y shape 에 맞게 행 줄이기
+        pool_y: int = int(self.x_shape_input[0] / self.y_shape_input[0])
+        x = MaxPooling2D(pool_size=(pool_y, 1))(x)
+
+        # 추가 Conv2D 층
+        x = Conv2D(
+            filters=128, kernel_size=5, activation=self.activation, padding="same"
+        )(x)
+
+        # 출력 층
+        out_y: int = self.x_shape_input[1] - self.y_shape_input[1] + 1
+        outputs = Conv2D(
+            filters=1, kernel_size=(1, out_y), activation="linear", padding="valid"
+        )(x)
+        model = keras.Model(inputs=inputs, outputs=outputs)
+
+        model.compile(optimizer="adam", loss="mean_squared_error")
 
         return model

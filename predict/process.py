@@ -79,17 +79,19 @@ def min_max_scaling(df: pd.DataFrame):
     return df_scaled, min_max_values
 
 
-def create_x_data_conv2d(future: pd.DataFrame, x_cols: list, days: int):
-    window_size = days * 24 * 12
+def create_x_data_conv2d(future: pd.DataFrame, x_cols: list, x_days: int, y_days: int):
+    window_size = x_days * 24 * 12
+    y_window_size = y_days * 24 * 12
     future_val = future[x_cols]
     x_data = []
 
-    for i in range(len(future_val) - 2 * window_size + 1):
+    for i in range(len(future_val) - (window_size + y_window_size) + 1):
         future_slice = future_val.iloc[i : i + window_size]
 
-        slice_scaled, _ = min_max_scaling(future_slice)
+        # slice_scaled, _ = min_max_scaling(future_slice)
+        # slice_vectors = slice_scaled.values
 
-        slice_vectors = slice_scaled.values
+        slice_vectors = future_slice.values
         x_data.append(slice_vectors)
 
     return np.array(x_data)
@@ -100,18 +102,19 @@ def create_y_data_conv2d(future: pd.DataFrame, y_cols: list, x_days: int, y_days
     y_window_size = y_days * 24 * 12
     future_val = future[y_cols]
     y_data = []
-    min_max_values_list = []
+    # min_max_values_list = []
 
-    for i in range(window_size, len(future) - window_size + 1):
+    for i in range(window_size, len(future) - y_window_size + 1):
         future_slice = future_val.iloc[i : i + y_window_size]
 
-        slice_scaled, min_max_values = min_max_scaling(future_slice)
-
-        slice_vectors = slice_scaled.values
+        # slice_scaled, min_max_values = min_max_scaling(future_slice)
+        # slice_vectors = slice_scaled.values
+        # y_data.append(slice_vectors)
+        # min_max_values_list.append(min_max_values)
+        slice_vectors = future_slice.values
         y_data.append(slice_vectors)
-        min_max_values_list.append(min_max_values)
 
-    return np.array(y_data), min_max_values_list
+    return np.array(y_data)
 
 
 # y_data 역 스케일링
