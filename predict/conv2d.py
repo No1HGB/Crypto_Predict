@@ -2,7 +2,6 @@ import pandas as pd
 from keras import callbacks
 from keras_tuner import RandomSearch
 import keras_tuner as kt
-import matplotlib.pyplot as plt
 
 import models
 from process import create_x_data_conv2d, create_y_data_conv2d, inverse_scaling
@@ -81,11 +80,8 @@ tuner.search(
     batch_size=hp.Int("batch_size", 16, 256, step=16),
 )
 
-# 최적의 하이퍼파라미터 출력(최적 하이퍼파라미터 개수, 첫 번째)
+# 최적 하이퍼파라미터
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
-print(f"Best number of layers: {best_hps.get('num_layers')}")
-for i in range(best_hps.get("num_layers")):
-    print(f"Layer {i} units: {best_hps.get('units_' + str(i))}")
 
 # 최적의 하이퍼파라미터로 모델 학습
 model = tuner.hypermodel.build(best_hps)
@@ -105,24 +101,35 @@ model.save(model_dir)
 
 # 예측(테스트 데이터)
 y_result = model.predict(x_data_test)
-y_pred = inverse_scaling(y_result, min_max_values_list_test)
-y_pred_origin = inverse_scaling(
-    y_result, min_max_values_list_learn[-test_cnt:]
+y_test = inverse_scaling(y_data_test, min_max_values_list_test, y_cols)
+y_pred = inverse_scaling(
+    y_result, min_max_values_list_learn[-test_cnt:], y_cols
 )  # 실전에서는 예측 데이터의 minmaxlist는 존재하지 않으므로 input 데이터의 list 사용
 
 # 예측 결과 출력
-x = range(y_data_test.shape[1])
-test_vector = y_data_test[-1]
-pred_vector = y_pred_origin[-1]
-plt.figure(figsize=(10, 6))
-plt.plot(x, test_vector, label="Test", color="blue")
-plt.plot(x, pred_vector, label="Pred", color="red")
-plt.title("Graphs of Two Vectors")
-plt.xlabel("Index")
-plt.ylabel("Value")
-plt.legend()
-plt.show()
+test_results = []
+for test_window in y_test:
+    init_price = 10000
+    ups = []
+    downs = []
 
-print(f"Expected Test Data\n{y_data_test[-1]}")
-print(f"Predictions\n{y_pred[-1]}")
-print(f"Origin Predictions\n{y_pred_origin[-1]}")
+    for test in test_window:
+        ups.append(init_price * test[0])
+        downs.append(init_price * test[2])
+        init_price *= test[1]
+    test_results.append([max(ups), init_price, min(downs)])
+
+pred_results = []
+for pred_window in y_pred:
+    init_price = 10000
+    ups = []
+    downs = []
+    for pred in pred_window:
+        ups.append(init_price * pred[0])
+        downs.append(init_price * pred[2])
+        init_price *= pred[1]
+    pred_results.append([max(ups), init_price, min(downs)])
+
+print(f"Check\n{y_test[-1][-3:]}")
+print(f"Expected Test Data\n{test_results}")
+print(f"Predictions\n{pred_results}")

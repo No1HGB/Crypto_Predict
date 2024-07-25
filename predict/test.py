@@ -11,7 +11,5 @@ data = {
 
 df = pd.DataFrame(data)
 
-# 각 열의 최댓값 구하기
-max_values = df.max()
 
-print(len(df.columns))
+print(df[["D", "B", "A"]])

@@ -9,15 +9,15 @@ def cal_value(df: pd.DataFrame) -> pd.DataFrame:
     df["EMA200"] = df["close"].ewm(alpha=alpha_200, adjust=False).mean()
     df["volume_MA"] = df["volume"].rolling(window=50).mean()
 
-    df["delta"] = df["close"] / df["open"] * 100
-    df["up_delta"] = df["high"] / df[["open", "close"]].max(axis=1) * 100
-    df["down_delta"] = df["low"] / df[["open", "close"]].min(axis=1) * 100
+    df["delta"] = df["close"] / df["open"]
+    df["up_delta"] = df["high"] / df[["open", "close"]].max(axis=1)
+    df["down_delta"] = df["low"] / df[["open", "close"]].min(axis=1)
 
     df["volume_ratio"] = df["volume"] / df["volume_MA"]
     df["volume_delta"] = df["volume"] / df["volume"].shift(1)
 
-    df["distance_50"] = df["close"] / df["EMA50"] * 100
-    df["distance_200"] = df["close"] / df["EMA200"] * 100
+    df["distance_50"] = df["close"] / df["EMA50"]
+    df["distance_200"] = df["close"] / df["EMA200"]
 
     df.drop(["EMA50", "EMA200", "volume_MA"], axis=1, inplace=True)
     df.dropna(axis=0, inplace=True, how="any")
@@ -115,14 +115,14 @@ def create_y_data_conv2d(future: pd.DataFrame, y_cols: list, x_days: int, y_days
 
 
 # y_data 역 스케일링
-def inverse_scaling(scaled_data: pd.DataFrame, min_max_values_list: list):
+def inverse_scaling(scaled_data: pd.DataFrame, min_max_values_list: list, y_cols: list):
     original_data = []
 
     for i in range(len(scaled_data)):
         # 각 슬라이스를 (timesteps, features, 1)에서 (timesteps, features)로 reshape
-        scaled_slice = scaled_data[i].reshape(-1, len(scaled_data.columns))
+        scaled_slice = scaled_data[i].reshape(-1, len(y_cols))
         min_max_values = min_max_values_list[i]
-        original_slice = pd.DataFrame(scaled_slice)
+        original_slice = pd.DataFrame(scaled_slice, columns=y_cols)
 
         for column in original_slice.columns:
             min_value, max_value = min_max_values[column]
