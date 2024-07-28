@@ -13,11 +13,11 @@ project_name = "conv2d_weight_test"
 model_dir = "model/" + "conv2d_weight_test.keras"
 
 # 변수 설정
-data_cnt: int = 3000
+data_cnt: int = 30000
 test_cnt: int = 12
 epochs: int = 1000
-x_cols: list = ["up_delta", "delta", "down_delta", "volume_ratio"]
-y_cols: list = ["up_delta", "delta", "down_delta"]
+x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
+y_cols: list = ["down_delta", "delta", "up_delta"]
 activation: str = "leaky_relu"
 
 

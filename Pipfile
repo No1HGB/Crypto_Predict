@@ -17,6 +17,7 @@ binance-futures-connector = "*"
 tensorflow = "*"
 keras-tuner = "*"
 matplotlib = "*"
+scikit-learn = "*"
 
 [dev-packages]
 

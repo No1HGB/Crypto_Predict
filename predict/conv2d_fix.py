@@ -7,29 +7,29 @@ from process import create_x_data_conv2d, create_y_data_conv2d
 
 
 # 프로젝트 설정
-project_name = "conv2d_fix_test"
-model_dir = "model/" + "conv2d_fix_test.keras"
-
+project_name = "conv2d_fix"
+model_dir = "model/" + "conv2d_fix.keras"
 
 # 데이터 가져오기
 data = pd.read_csv("data/conv2d.csv")
 
 # 변수 설정
-data_cnt: int = 1700
+data_cnt: int = len(data)
 test_cnt: int = 12
 epochs: int = 100
-x_cols: list = ["up_delta", "delta", "down_delta", "volume_ratio"]
-y_cols: list = ["up_delta", "delta", "down_delta"]
+x_days: int = 3
+x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
+y_cols: list = ["down_delta", "delta", "up_delta"]
 activation: str = "leaky_relu"
-important_cnt = 120
+important_cnt = 12000
 regular_weight = 1.0
-important_weight = 37.0
+important_weight = regular_weight * len(data) / (important_cnt * 2)
 
 data = data[-data_cnt:]
 
 # 데이터 전처리 및 생성
-x_data = create_x_data_conv2d(data, x_cols, 3, 1)
-y_data = create_y_data_conv2d(data, y_cols, 3, 1)
+x_data = create_x_data_conv2d(data, x_cols, x_days, 1)
+y_data = create_y_data_conv2d(data, y_cols, x_days, 1)
 
 # 데이터를 Conv2D 입력에 맞게 4차원으로 변환
 x_data = x_data.reshape((x_data.shape[0], x_data.shape[1], x_data.shape[2], 1))
