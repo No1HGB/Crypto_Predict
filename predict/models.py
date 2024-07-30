@@ -53,7 +53,7 @@ class Conv2DHyperModel(HyperModel):
         x_shape_input: tuple,
         y_shape_input: tuple,
         name: str = "conv2d",
-        activation: str = "leaky_relu",
+        activation: str = "relu",
     ):
         super().__init__(name=name)  # 부모 클래스의 __init__ 메서드 호출
         self.x_shape_input = x_shape_input
@@ -67,23 +67,29 @@ class Conv2DHyperModel(HyperModel):
         # 첫 번째 Conv2D 층
         x = Conv2D(
             filters=hp.Int("conv1_filters", 32, 128, step=32),
-            kernel_size=hp.Choice("conv1_kernel", values=[3, 5]),
+            kernel_size=(3, 3),
             activation=self.activation,
             padding="same",
         )(inputs)
 
-        # x shape을 y shape 에 맞게 행 줄이기
-        pool_y: int = int(self.x_shape_input[0] / self.y_shape_input[0])
-        x = MaxPooling2D(pool_size=(pool_y, 1))(x)
-
         # 추가 Conv2D 층
         for i in range(hp.Int("num_conv_layers", 1, 3)):
             x = Conv2D(
-                filters=hp.Int(f"conv{i + 2}_filters", 32, 128, step=32),
-                kernel_size=hp.Choice(f"conv{i + 2}_kernel", values=[3, 5]),
+                filters=hp.Int(f"one_conv{i + 2}_filters", 32, 128, step=32),
+                kernel_size=(1, 1),
                 activation=self.activation,
                 padding="same",
             )(x)
+            x = Conv2D(
+                filters=hp.Int(f"conv{i + 2}_filters", 32, 128, step=32),
+                kernel_size=(3, 3),
+                activation=self.activation,
+                padding="same",
+            )(x)
+
+        # x shape을 y shape 에 맞게 행 줄이기
+        pool_y: int = int(self.x_shape_input[0] / self.y_shape_input[0])
+        x = MaxPooling2D(pool_size=(pool_y, 1))(x)
 
         # 출력 층
         out_y: int = self.x_shape_input[1] - self.y_shape_input[1] + 1
@@ -106,7 +112,7 @@ class Conv2DModel:
         self,
         x_shape_input: tuple,
         y_shape_input: tuple,
-        activation: str = "leaky_relu",
+        activation: str = "relu",
     ):
         super().__init__()  # 부모 클래스의 __init__ 메서드 호출
         self.x_shape_input = x_shape_input
@@ -119,17 +125,27 @@ class Conv2DModel:
 
         # 첫 번째 Conv2D 층
         x = Conv2D(
-            filters=96, kernel_size=3, activation=self.activation, padding="same"
+            filters=64, kernel_size=(3, 3), activation=self.activation, padding="same"
         )(inputs)
+
+        # 추가 Conv2D 층
+        for _ in range(3):
+            x = Conv2D(
+                filters=32,
+                kernel_size=(1, 1),
+                activation=self.activation,
+                padding="same",
+            )(x)
+            x = Conv2D(
+                filters=32,
+                kernel_size=(3, 3),
+                activation=self.activation,
+                padding="same",
+            )(x)
 
         # x shape을 y shape 에 맞게 행 줄이기
         pool_y: int = int(self.x_shape_input[0] / self.y_shape_input[0])
         x = MaxPooling2D(pool_size=(pool_y, 1))(x)
-
-        # 추가 Conv2D 층
-        x = Conv2D(
-            filters=128, kernel_size=5, activation=self.activation, padding="same"
-        )(x)
 
         # 출력 층
         out_y: int = self.x_shape_input[1] - self.y_shape_input[1] + 1

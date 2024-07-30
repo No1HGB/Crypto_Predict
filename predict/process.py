@@ -87,10 +87,6 @@ def create_x_data_conv2d(future: pd.DataFrame, x_cols: list, x_days: int, y_days
 
     for i in range(len(future_val) - (window_size + y_window_size) + 1):
         future_slice = future_val.iloc[i : i + window_size]
-
-        # slice_scaled, _ = min_max_scaling(future_slice)
-        # slice_vectors = slice_scaled.values
-
         slice_vectors = future_slice.values
         x_data.append(slice_vectors)
 
@@ -102,15 +98,9 @@ def create_y_data_conv2d(future: pd.DataFrame, y_cols: list, x_days: int, y_days
     y_window_size = y_days * 24 * 12
     future_val = future[y_cols]
     y_data = []
-    # min_max_values_list = []
 
     for i in range(window_size, len(future) - y_window_size + 1):
         future_slice = future_val.iloc[i : i + y_window_size]
-
-        # slice_scaled, min_max_values = min_max_scaling(future_slice)
-        # slice_vectors = slice_scaled.values
-        # y_data.append(slice_vectors)
-        # min_max_values_list.append(min_max_values)
         slice_vectors = future_slice.values
         y_data.append(slice_vectors)
 

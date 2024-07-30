@@ -2,19 +2,26 @@ import pandas as pd
 from sklearn.cluster import KMeans
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
+import joblib
 
 from process import create_x_data_conv2d
 
+# 프로젝트 설정
+# drive_dir = "drive/My Drive/Colab Notebooks/"
+data_dir = "data/conv2d.csv"
+data_reshaped_save_dir = "data/clustered_data_7d.csv"
+model_dir = "model/kmeans_model.pkl"
+
 # 원본 데이터
-df = pd.read_csv("data/conv2d.csv")
+df = pd.read_csv(data_dir)
 
 # 변수 설정
-data_cnt: int = len(df)
-test_cnt: int = 12
-epochs: int = 100
-x_days: int = 3
+data_cnt: int = 120000
+test_cnt: int = 120
+x_days: int = 7
 x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
-clusters: int = 3
+y_cols: list = ["down_delta", "delta", "up_delta"]
+cluster_num: int = 0
 
 df = df[-data_cnt:]
 
@@ -23,15 +30,19 @@ data = create_x_data_conv2d(df, x_cols, x_days, 1)
 data_reshaped = data.reshape(data.shape[0], data.shape[1] * data.shape[2])
 
 # K-Means 클러스터링 수행 (K=3)
-kmeans = KMeans(n_clusters=clusters, random_state=0).fit(data_reshaped)
+kmeans = KMeans(n_clusters=cluster_num, random_state=0).fit(data_reshaped)
 
 # 클러스터 할당 결과
 labels = kmeans.labels_
 
+# K-Means 모델 저장
+joblib.dump(kmeans, model_dir)
+print("Model saved successfully!")
+
 # 클러스터 할당 결과를 csv 파일로 저장
 df_reshaped = pd.DataFrame(data_reshaped)
 df_reshaped["Cluster"] = labels
-df_reshaped.to_csv("data/clustered_data.csv", index=False)
+df_reshaped.to_csv(data_reshaped_save_dir, index=False)
 
 # 마지막 3만개의 데이터에 대한 클러스터 할당 결과
 subset_labels = labels[-30000:]

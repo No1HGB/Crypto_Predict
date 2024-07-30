@@ -2,7 +2,7 @@ import datetime
 import pandas as pd
 
 import config
-from fetch import fetch_interval_data
+from data_fetch import fetch_interval_data
 from process import cal_value
 
 # 매일 오전 9시 이후 처리

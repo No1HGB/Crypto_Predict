@@ -1,25 +1,29 @@
 import numpy as np
 import pandas as pd
 from keras import callbacks
+from keras_tuner import RandomSearch
+import keras_tuner as kt
 
 import models
-from process import create_x_data_conv2d, create_y_data_conv2d
 from model_test import make_result, plot_result
+from process import create_x_data_conv2d, create_y_data_conv2d
 
 
 # 프로젝트 설정
 # drive_dir = "drive/My Drive/Colab Notebooks/"
-project_name = "conv2d_0"
-model_dir = "model/conv2d_0.keras"
+project_name = "conv2d_0_search"
+model_dir = "model/conv2d_0_search.keras"
+
 data_dir = "data/conv2d.csv"
-cluster_dir = "data/clustered_data_0_7d.csv"
+cluster_dir = "data/clustered_data_7d.csv"
+hyperparam_dir = "hyperparam"
 
 # 데이터 가져오기
 data = pd.read_csv(data_dir)
 
 # 변수 설정
-data_cnt: int = len(data)
-test_cnt: int = 12
+data_cnt: int = 120000
+test_cnt: int = 120
 epochs: int = 100
 x_days: int = 7
 x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
@@ -65,11 +69,23 @@ y_data_test = y_data[-test_cnt:]
 print(f"Shape: {x_data_learn.shape},{y_data_learn.shape}")
 print(f"Test Shape: {x_data_test.shape},{y_data_test.shape}")
 
-model = models.Conv2DModel(
+# RandomSearch 객체 생성
+hypermodel = models.Conv2DHyperModel(
     x_shape_input=x_shape_input,
     y_shape_input=y_shape_input,
+    name=project_name,
     activation=activation,
-).build()
+)
+
+# 하이퍼파라미터 서치 객체(튜너) 생성
+tuner = RandomSearch(
+    hypermodel,
+    objective="val_loss",
+    max_trials=10,
+    executions_per_trial=1,
+    directory=hyperparam_dir,
+    project_name=project_name,
+)
 
 # 조기 종료 콜백 설정
 early_stopping = callbacks.EarlyStopping(
@@ -77,13 +93,35 @@ early_stopping = callbacks.EarlyStopping(
 )
 
 
-model.fit(
+# 하이퍼파라미터 튜닝 수행
+hp = kt.HyperParameters()
+tuner.search(
+    x_data_learn,
+    y_data_learn,
+    epochs=epochs,
+    validation_split=0.2,
+    callbacks=[early_stopping],
+    batch_size=hp.Int("batch_size", 16, 256, step=16),
+)
+
+# 최적 하이퍼파라미터
+best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
+print(f"Conv1 Filter: {best_hps.get('conv1_filters')}")
+for i in range(best_hps.get("num_conv_layers")):
+    print(f"Conv{i + 2} Filter: {best_hps.get('one_conv' + str(i + 2) + '_filters')}")
+    print(f"Conv{i + 2} Filter: {best_hps.get('conv' + str(i + 2) + '_filters')}")
+
+
+# 최적의 하이퍼파라미터로 모델 학습
+model = tuner.hypermodel.build(best_hps)
+history = model.fit(
     x_data_learn,
     y_data_learn,
     epochs=epochs,
     callbacks=[early_stopping],
     validation_split=0.2,
-)
+)  # validation_split 적용 여부 고려
+
 
 # 모델 평가(학습 데이터)
 result = model.evaluate(x_data_learn, y_data_learn, return_dict=True)
@@ -102,6 +140,13 @@ y_pred = y_result.reshape(
 )
 
 # 예측 결과 출력
-test_results = make_result(y_test)
-pred_results = make_result(y_pred)
+test_results: list = make_result(y_test)
+pred_results: list = make_result(y_pred)
 plot_result(test_results, pred_results)
+test_means = np.mean(test_results, axis=0)
+pred_means = np.mean(pred_results, axis=0)
+print(f"Test Means:{test_means}")
+print(f"Test Last:{test_results[-1]}")
+print(f"Pred Means:{pred_means}")
+print(f"Test Results:{test_results}")
+print(f"Pred Results:{pred_results}")

@@ -2,7 +2,7 @@ import time, datetime
 import pandas as pd
 
 import config
-from fetch import fetch_interval_data, fetch_data_start
+from data_fetch import fetch_interval_data, fetch_data_start
 from process import cal_value
 
 symbol = config.symbol
