@@ -172,52 +172,6 @@ def fetch_interval_data(
     for column in df.columns:
         df[column] = pd.to_numeric(df[column], errors="coerce")
 
-    if interval == "1m":
-        time.sleep(0.1)
-        start_time_1m = int(df.iloc[-1]["close_time"] + 1)
-        end_time_1m = end_time
-        bars_1m = client.klines(
-            symbol=symbol,
-            interval=interval,
-            startTime=start_time_1m,
-            endTime=end_time_1m,
-            limit=cnt,
-        )
-        df_1m = pd.DataFrame(
-            bars_1m,
-            columns=[
-                "open_time",
-                "open",
-                "high",
-                "low",
-                "close",
-                "volume",
-                "close_time",
-                "quote_asset_volume",
-                "number_of_trades",
-                "taker_buy_base_asset_volume",
-                "taker_buy_quote_asset_volume",
-                "ignore",
-            ],
-        )
-        df_1m.drop(
-            [
-                "quote_asset_volume",
-                "number_of_trades",
-                "taker_buy_base_asset_volume",
-                "taker_buy_quote_asset_volume",
-                "ignore",
-            ],
-            axis=1,
-            inplace=True,
-        )
-
-        # 모든 열을 숫자로 변환
-        for column in df_1m.columns:
-            df_1m[column] = pd.to_numeric(df_1m[column], errors="coerce")
-
-        df = pd.concat([df, df_1m], axis=0, ignore_index=True)
-
     return df
 
 

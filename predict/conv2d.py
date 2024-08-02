@@ -3,7 +3,7 @@ import pandas as pd
 from keras import callbacks
 
 import models
-from process import create_x_data_conv2d, create_y_data_conv2d
+from process import generate_x_data_conv2d, generate_y_data_conv2d
 from model_test import make_result, plot_result
 
 
@@ -12,13 +12,9 @@ from model_test import make_result, plot_result
 project_name = "conv2d_0"
 model_dir = "model/conv2d_0.keras"
 data_dir = "data/conv2d.csv"
-cluster_dir = "data/clustered_data_0_7d.csv"
-
-# 데이터 가져오기
-data = pd.read_csv(data_dir)
+cluster_dir = "data/clustered_data_fit_7d.csv"
 
 # 변수 설정
-data_cnt: int = len(data)
 test_cnt: int = 12
 epochs: int = 100
 x_days: int = 7
@@ -26,13 +22,18 @@ x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
 y_cols: list = ["down_delta", "delta", "up_delta"]
 activation: str = "relu"
 cluster_num: int = 0
+batch_size: int = 32
 
-# 데이터 개수 자르기
-data = data[-data_cnt:]
+# 데이터 가져오기
+data = pd.read_csv(data_dir, usecols=x_cols, dtype=np.float32)
 
 # 데이터 전처리 및 생성
-x_data = create_x_data_conv2d(data, x_cols, x_days, 1)
-y_data = create_y_data_conv2d(data, y_cols, x_days, 1)
+x_gen = generate_x_data_conv2d(data, x_cols, x_days, 1)
+y_gen = generate_y_data_conv2d(data, y_cols, x_days, 1)
+
+x_data = np.array(list(x_gen), dtype=np.float32)
+y_data = np.array(list(y_gen), dtype=np.float32)
+
 if len(x_data) != len(y_data):
     raise Exception("Data size mismatch")
 
@@ -40,15 +41,12 @@ if len(x_data) != len(y_data):
 cluster = pd.read_csv(cluster_dir)
 
 # 분류
-cluster_lst_x = []
-cluster_lst_y = []
 cluster = cluster[-len(x_data) :]
-for i in range(len(x_data)):
-    if cluster["Cluster"].iloc[i] == cluster_num:
-        cluster_lst_x.append(x_data[i])
-        cluster_lst_y.append(y_data[i])
-x_data = np.array(cluster_lst_x)
-y_data = np.array(cluster_lst_y)
+# 클러스터 번호에 해당하는 인덱스만 추출
+indices = cluster.index[cluster["Cluster"] == cluster_num].tolist()
+# 해당 인덱스를 사용하여 x_data와 y_data 필터링
+x_data = x_data[indices]
+y_data = y_data[indices]
 
 # 데이터를 Conv2D 입력에 맞게 4차원으로 변환
 x_data = x_data.reshape((x_data.shape[0], x_data.shape[1], x_data.shape[2], 1))
@@ -81,6 +79,7 @@ model.fit(
     x_data_learn,
     y_data_learn,
     epochs=epochs,
+    batch_size=batch_size,
     callbacks=[early_stopping],
     validation_split=0.2,
 )

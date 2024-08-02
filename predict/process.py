@@ -126,3 +126,24 @@ def inverse_scaling(scaled_data: pd.DataFrame, min_max_values_list: list, y_cols
         original_data.append(original_slice.values)
 
     return np.array(original_data)
+
+
+# 메모리 효율화를 위한 x,y data
+def generate_x_data_conv2d(
+    future: pd.DataFrame, x_cols: list, x_days: int, y_days: int
+):
+    window_size = x_days * 24 * 12
+    future_val = future[x_cols].values.astype(np.float32)
+
+    for i in range(len(future_val) - window_size - y_days * 24 * 12 + 1):
+        yield future_val[i : i + window_size]
+
+
+def generate_y_data_conv2d(
+    future: pd.DataFrame, y_cols: list, x_days: int, y_days: int
+):
+    window_size = x_days * 24 * 12
+    future_val = future[y_cols].values.astype(np.float32)
+
+    for i in range(window_size, len(future_val) - y_days * 24 * 12 + 1):
+        yield future_val[i : i + y_days * 24 * 12]

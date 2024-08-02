@@ -4,6 +4,7 @@ predict/hyperparam/*
 predict/results/*
 predict/model/*
 predict/data/*
+predict/config_docs.txt
 
 ### Python template
 # Byte-compiled / optimized / DLL files

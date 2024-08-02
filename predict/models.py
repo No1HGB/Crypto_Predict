@@ -102,6 +102,7 @@ class Conv2DHyperModel(HyperModel):
         model.compile(
             optimizer="adam",
             loss="mean_squared_error",
+            metrics=["mean_absolute_percentage_error"],
         )
 
         return model
@@ -154,6 +155,10 @@ class Conv2DModel:
         )(x)
         model = keras.Model(inputs=inputs, outputs=outputs)
 
-        model.compile(optimizer="adam", loss="mean_squared_error")
+        model.compile(
+            optimizer="adam",
+            loss="mean_squared_error",
+            metrics=["mean_absolute_percentage_error"],
+        )
 
         return model
