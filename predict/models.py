@@ -5,7 +5,7 @@ from tensorflow.keras.layers import (
     Conv1D,
     GlobalAveragePooling1D,
     Conv2D,
-    MaxPooling2D,
+    Flatten,
 )
 from keras_tuner import HyperModel
 
@@ -73,7 +73,7 @@ class Conv2DHyperModel(HyperModel):
         )(inputs)
 
         # 추가 Conv2D 층
-        for i in range(hp.Int("num_conv_layers", 1, 3)):
+        for i in range(hp.Int("num_conv_layers", 1, 5)):
             x = Conv2D(
                 filters=hp.Int(f"one_conv{i + 2}_filters", 32, 128, step=32),
                 kernel_size=(1, 1),
@@ -87,15 +87,18 @@ class Conv2DHyperModel(HyperModel):
                 padding="same",
             )(x)
 
-        # x shape을 y shape 에 맞게 행 줄이기
-        pool_y: int = int(self.x_shape_input[0] / self.y_shape_input[0])
-        x = MaxPooling2D(pool_size=(pool_y, 1))(x)
-
         # 출력 층
         out_y: int = self.x_shape_input[1] - self.y_shape_input[1] + 1
         outputs = Conv2D(
-            filters=1, kernel_size=(1, out_y), activation="linear", padding="valid"
+            filters=1,
+            kernel_size=(self.x_shape_input[0], out_y),
+            activation="linear",
+            padding="valid",
         )(x)
+
+        # 차원 축소를 위해 Flatten 및 Dense 층 추가
+        outputs = Flatten()(outputs)
+        outputs = Dense(self.y_shape_input[1], activation="linear")(outputs)
 
         model = keras.Model(inputs=inputs, outputs=outputs)
 
@@ -144,15 +147,19 @@ class Conv2DModel:
                 padding="same",
             )(x)
 
-        # x shape을 y shape 에 맞게 행 줄이기
-        pool_y: int = int(self.x_shape_input[0] / self.y_shape_input[0])
-        x = MaxPooling2D(pool_size=(pool_y, 1))(x)
-
         # 출력 층
         out_y: int = self.x_shape_input[1] - self.y_shape_input[1] + 1
         outputs = Conv2D(
-            filters=1, kernel_size=(1, out_y), activation="linear", padding="valid"
+            filters=1,
+            kernel_size=(self.x_shape_input[0], out_y),
+            activation="linear",
+            padding="valid",
         )(x)
+
+        # 차원 축소를 위해 Flatten 및 Dense 층 추가
+        outputs = Flatten()(outputs)
+        outputs = Dense(self.y_shape_input[1], activation="linear")(outputs)
+
         model = keras.Model(inputs=inputs, outputs=outputs)
 
         model.compile(

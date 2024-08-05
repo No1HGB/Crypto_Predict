@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import joblib
 
-from process import create_x_data_conv2d, generate_x_data_conv2d
+from process import generate_x_data_conv2d
 
 # 프로젝트 설정
 # drive_dir = "drive/My Drive/Colab Notebooks/"
@@ -15,8 +15,17 @@ model_dir = "model/kmeans_model_fit_7d.pkl"
 
 # 변수 설정
 x_days: int = 7
-x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
-clusters: int = 4
+x_cols: list = [
+    "volume_d200",
+    "volume_d50",
+    "volume_delta",
+    "d200",
+    "d50",
+    "down_delta",
+    "delta",
+    "up_delta",
+]
+clusters: int = 8
 plot_data_cnt: int = 12000
 
 # 원본 데이터
@@ -67,7 +76,16 @@ fig, axes = plt.subplots(nrows=num_features, ncols=num_features, figsize=(20, 20
 fig.suptitle("K-Means Clustering with Multiple 2D Scatter Plots")
 
 # 각 클러스터에 대한 색상 설정
-colors = ["b", "g", "r", "y"]
+colors = [
+    "#1f77b4",  # 파란색
+    "#ff7f0e",  # 주황색
+    "#2ca02c",  # 녹색
+    "#d62728",  # 빨간색
+    "#9467bd",  # 보라색
+    "#8c564b",  # 갈색
+    "#e377c2",  # 분홍색
+    "#7f7f7f",  # 회색
+]
 
 for i in range(num_features):
     for j in range(num_features):

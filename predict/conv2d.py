@@ -4,7 +4,7 @@ from keras import callbacks
 
 import models
 from process import generate_x_data_conv2d, generate_y_data_conv2d
-from model_test import make_result, plot_result
+from model_test import plot_result
 
 
 # 프로젝트 설정
@@ -15,17 +15,25 @@ data_dir = "data/conv2d.csv"
 cluster_dir = "data/clustered_data_fit_7d.csv"
 
 # 변수 설정
-test_cnt: int = 12
+test_cnt: int = 120
 epochs: int = 100
 x_days: int = 7
-x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
-y_cols: list = ["down_delta", "delta", "up_delta"]
+x_cols: list = [
+    "volume_d200",
+    "volume_d50",
+    "volume_delta",
+    "d200",
+    "d50",
+    "down_delta",
+    "delta",
+    "up_delta",
+]
+y_cols: list = ["open", "close", "high", "low"]
 activation: str = "relu"
 cluster_num: int = 0
-batch_size: int = 32
 
 # 데이터 가져오기
-data = pd.read_csv(data_dir, usecols=x_cols, dtype=np.float32)
+data = pd.read_csv(data_dir, usecols=x_cols + y_cols, dtype=np.float32)
 
 # 데이터 전처리 및 생성
 x_gen = generate_x_data_conv2d(data, x_cols, x_days, 1)
@@ -50,9 +58,8 @@ y_data = y_data[indices]
 
 # 데이터를 Conv2D 입력에 맞게 4차원으로 변환
 x_data = x_data.reshape((x_data.shape[0], x_data.shape[1], x_data.shape[2], 1))
-y_data = y_data.reshape((y_data.shape[0], y_data.shape[1], y_data.shape[2], 1))
 x_shape_input = (x_data.shape[1], x_data.shape[2], 1)
-y_shape_input = (y_data.shape[1], y_data.shape[2], 1)
+y_shape_input = (None, y_data.shape[1])
 
 # 학습 데이터, 테스트 데이터 분리
 x_data_learn = x_data[:-test_cnt]
@@ -74,12 +81,10 @@ early_stopping = callbacks.EarlyStopping(
     monitor="val_loss", patience=3, restore_best_weights=True
 )
 
-
 model.fit(
     x_data_learn,
     y_data_learn,
     epochs=epochs,
-    batch_size=batch_size,
     callbacks=[early_stopping],
     validation_split=0.2,
 )
@@ -90,17 +95,14 @@ print(f"Results: {result}")
 model.summary()  # 파라미터 수 및 깊이 수 확인
 model.save(model_dir)
 
-
 # 예측(테스트 데이터)
-y_result = model.predict(x_data_test)
-y_test = y_data_test.reshape(
-    (y_data_test.shape[0], y_data_test.shape[1], y_data_test.shape[2])
-)
-y_pred = y_result.reshape(
-    (y_data_test.shape[0], y_data_test.shape[1], y_data_test.shape[2])
-)
+pred_results = model.predict(x_data_test)
+test_results = y_data_test.copy()
 
 # 예측 결과 출력
-test_results = make_result(y_test)
-pred_results = make_result(y_pred)
 plot_result(test_results, pred_results)
+test_means = np.mean(test_results, axis=0)
+pred_means = np.mean(pred_results, axis=0)
+print(f"Test Means:{test_means}")
+print(f"Test Last:{test_results[-1]}")
+print(f"Pred Means:{pred_means}")

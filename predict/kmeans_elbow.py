@@ -1,24 +1,34 @@
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.cluster import MiniBatchKMeans
 
-from process import create_x_data_conv2d
+from process import generate_x_data_conv2d
 
 # 디렉토리 설정
 # drive_dir = "drive/My Drive/Colab Notebooks/"
 data_dir = "data/conv2d.csv"
 
-# 원본 데이터
-df = pd.read_csv(data_dir)
-
 # 변수 설정
-data_cnt: int = len(df)
 x_days: int = 7
-x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
+x_cols: list = [
+    "volume_d200",
+    "volume_d50",
+    "volume_delta",
+    "d200",
+    "d50",
+    "down_delta",
+    "delta",
+    "up_delta",
+]
 batch_size: int = 256 * 256
 
+# 원본 데이터
+df = pd.read_csv(data_dir, usecols=x_cols, dtype=np.float32)
+
 # x_data 데이터 생성
-data = create_x_data_conv2d(df, x_cols, x_days, 1)
+gen = generate_x_data_conv2d(df, x_cols, x_days, 1)
+data = np.array(list(gen), dtype=np.float32)
 data_reshaped = data.reshape(data.shape[0], data.shape[1] * data.shape[2])
 
 # SSE 값을 저장할 리스트 초기화
