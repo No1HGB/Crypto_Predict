@@ -3,7 +3,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from tensorflow import keras
 
-from process import create_x_data_conv2d, create_y_data_conv2d
+from process import generate_y_data_conv2d, generate_x_data_conv2d
 
 
 def make_result(y_data: np.array):
@@ -61,23 +61,21 @@ data_dir = "data/conv2d.csv"
 cluster_dir = "data/clustered_data_7d.csv"
 
 
-# 데이터 가져오기
-data = pd.read_csv(data_dir)
-
 # 변수 설정
-data_cnt: int = 120000
 test_cnt: int = 120
 x_days: int = 7
 x_cols: list = ["volume_ratio", "down_delta", "delta", "up_delta"]
 y_cols: list = ["down_delta", "delta", "up_delta"]
 cluster_num: int = 0
 
-# 데이터 개수 자르기
-data = data[-data_cnt:]
+# 데이터 가져오기
+data = pd.read_csv(data_dir)
 
 # 데이터 전처리 및 생성
-x_data = create_x_data_conv2d(data, x_cols, x_days, 1)
-y_data = create_y_data_conv2d(data, y_cols, x_days, 1)
+x_gen = generate_x_data_conv2d(data, x_cols, x_days, 1)
+y_gen = generate_y_data_conv2d(data, y_cols, x_days, 1)
+x_data = np.array(list(x_gen), dtype=np.float32)
+y_data = np.array(list(y_gen), dtype=np.float32)
 if len(x_data) != len(y_data):
     raise Exception("Data size mismatch")
 

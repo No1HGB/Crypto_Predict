@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from keras import callbacks
 
-import models
+from models import Conv2DModel
 from process import generate_x_data_conv2d, generate_y_data_conv2d
 from model_test import plot_result
 
@@ -70,7 +70,7 @@ y_data_test = y_data[-test_cnt:]
 print(f"Shape: {x_data_learn.shape},{y_data_learn.shape}")
 print(f"Test Shape: {x_data_test.shape},{y_data_test.shape}")
 
-model = models.Conv2DModel(
+model = Conv2DModel(
     x_shape_input=x_shape_input,
     y_shape_input=y_shape_input,
     activation=activation,
