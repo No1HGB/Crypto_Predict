@@ -114,13 +114,13 @@ class Conv2DHyperModel(HyperModel):
 class Conv2DModel:
     def __init__(
         self,
-        x_shape_input: tuple,
-        y_shape_input: tuple,
+        x_days: int,
+        x_cols: list,
         activation: str = "relu",
     ):
         super().__init__()  # 부모 클래스의 __init__ 메서드 호출
-        self.x_shape_input = x_shape_input
-        self.y_shape_input = y_shape_input
+        self.x_shape_input = (x_days * 24 * 12, len(x_cols), 1)
+        self.y_shape_input = (None, 3)
         self.activation = activation
 
     def build(self):

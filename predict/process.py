@@ -100,7 +100,10 @@ class DataGenerator(tf.keras.utils.Sequence):
         test_size,
         batch_size,
         indices_split_size,
+        is_validation=False,
+        validation_split=0.2,
     ):
+        super().__init__()
         self.data_file_path = data_file_path
         self.cluster_file_path = cluster_file_path
         self.cluster_num = cluster_num
@@ -113,6 +116,10 @@ class DataGenerator(tf.keras.utils.Sequence):
         self.batch_size = batch_size
         self.test_size = test_size
         self.indices_split_size = indices_split_size  # 한 번에 처리할 인덱스 수
+        self.is_validation = is_validation
+        self.validation_split = validation_split
+
+        # 모든 속성 초기화 이후 호출
         self.indices = self._get_indices()
         self.current_index_batch = 0  # 현재 처리 중인 인덱스 배치
         self.loaded_data = None  # 메모리에 로드된 데이터
@@ -136,6 +143,11 @@ class DataGenerator(tf.keras.utils.Sequence):
         ) * self.batch_size
         x_batch = self.loaded_data[0][start : start + self.batch_size]
         y_batch = self.loaded_data[1][start : start + self.batch_size]
+
+        x_batch = x_batch.reshape(
+            (x_batch.shape[0], x_batch.shape[1], x_batch.shape[2], 1)
+        )
+
         return np.array(x_batch), np.array(y_batch)
 
     def _get_indices(self):
@@ -145,7 +157,16 @@ class DataGenerator(tf.keras.utils.Sequence):
         indices = np.where(cluster_array[:, 0] == self.cluster_num)[0][
             : -self.test_size
         ]
-        return indices
+        # train, validation 분리
+        total_len = len(indices)
+        split_idx = int(total_len * (1 - self.validation_split))
+        train_indices = indices[:split_idx]  # 처음 80%
+        val_indices = indices[split_idx:]  # 마지막 20%
+
+        if self.is_validation:
+            return val_indices
+
+        return train_indices
 
     def _prepare_next_batch(self):
         # 인덱스 배열을 나누어 처리
@@ -166,9 +187,9 @@ class DataGenerator(tf.keras.utils.Sequence):
         data_chunk = pd.read_csv(
             self.data_file_path,
             usecols=self.x_cols + self.y_cols,
-            skiprows=int(start_data_idx),
+            skiprows=list(range(1, int(start_data_idx) + 1)),
             nrows=int(end_data_idx - start_data_idx),
-            header=None,
+            header=0,
         )
 
         # x_data와 y_data 생성
@@ -231,9 +252,9 @@ def make_test_data(
     data_chunk = pd.read_csv(
         data_file_path,
         usecols=x_cols + y_cols,
-        skiprows=int(start_data_idx),
+        skiprows=list(range(1, int(start_data_idx) + 1)),
         nrows=int(end_data_idx - start_data_idx),
-        header=None,
+        header=0,
     )
 
     # x_data와 y_data 생성
@@ -264,4 +285,8 @@ def make_test_data(
         high_ratio = high_max / max_open_close
         y_data.append([low_ratio, close_open_ratio, high_ratio])
 
-    return (np.array(x_data), np.array(y_data))
+    x_data = np.array(x_data)
+    y_data = np.array(y_data)
+    x_data = x_data.reshape((x_data.shape[0], x_data.shape[1], x_data.shape[2], 1))
+
+    return x_data, y_data
